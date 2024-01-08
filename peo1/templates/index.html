@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>藏头诗生成器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>基于手撸RNN神经网络的藏头诗生成器</h1>
+    <form method="post">
+        输入字：<input type="text" name="input_chars">
+        <input type="submit" value="生成诗句">
+    </form>
+    <pre>{{ poem }}</pre>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <div class="project-details">
+        <h2>数据结构课设：神经网络</h2>
+        <div class="team">
+            <ul>
+                <li>组长：杨熙承</li>
+                <li>组员：王语桐</li>
+                <li>组员：徐姜旸</li>
+                <li>组员：林越</li>
+            </ul>
+        </div>
+    </div>
+    
+</body>
+</html>

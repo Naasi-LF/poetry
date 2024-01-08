@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>基于LSTM神经网络的藏头诗生成器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+    <h1>基于LSTM神经网络的藏头诗生成器</h1>
+    <form method="post">
+        开始词：<input type="text" name="start_words" required />
+        <input type="submit" value="生成" />
+    </form>
+    {% if poem %}
+        <pre>{{ poem }}</pre>
+    {% endif %}
+    <div class="team-info">
+        <h2>数据结构课设：神经网络</h2>
+        <ul>
+            <li>组长：杨熙承</li>
+            <li>组员：王语桐</li>
+            <li>组员：徐姜旸</li>
+            <li>组员：林越</li>
+        </ul>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

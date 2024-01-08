@@ -1,0 +1,80 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-image: url('./back.jpg') !important; /* 强制应用此背景图像 */
+    background-size: cover; /* 使背景图片覆盖整个页面 */
+    background-position: center; /* 将背景图片居中 */
+    background-repeat: no-repeat; /* 防止背景图片重复 */
+    background-position: center 10%;
+}
+
+h1 {
+    color: #333;
+}
+
+form {
+    margin: 20px 0;
+}
+
+.project-details {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    width: 70%;
+    max-width: 500px;
+    text-align: center;
+    margin: 10px auto;
+    font-size: 0.9em;
+}
+
+
+
+.project-details ul {
+    list-style: none;
+    padding: 0;
+}
+
+.project-details li {
+    line-height: 1.4;
+}
+
+pre {
+    padding: 25px;
+    border-radius: 5px;
+    font-size: 2em; 
+    line-height: 1.4;
+    max-width: 500px;
+    width: 90%;
+    margin: 20px auto;
+    text-align: center; 
+    white-space: pre-wrap;
+    font-family: '华文琥珀', sans-serif; /* 设置字体风格为微软雅黑，备选为Microsoft YaHei和sans-serif */
+
+}
+.team-info {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.team-info h2 {
+    margin-bottom: 15px;
+    color: #69616e;
+}
+
+.team-info ul {
+    list-style: none;
+    padding: 0;
+    font-size: 1.1em;
+    color: rgb(229, 229, 209); /* 设置字体颜色为白色 */
+    font-family: '华文琥珀', sans-serif; /* 设置字体风格为微软雅黑，备选为Microsoft YaHei和sans-serif */
+}
+
+.team-info li {
+    margin-bottom: 8px;
+}

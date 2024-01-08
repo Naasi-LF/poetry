@@ -1,0 +1,187 @@
+import matplotlib.pyplot as plt
+%config InlineBackend.figure_format = 'retina'
+%matplotlib inline
+import jieba
+import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
+import random
+
+file_path = 'data.csv'
+data = pd.read_csv(file_path)
+
+
+def jieba_tokenizer(text):
+    words = jieba.cut(text)
+    filtered_words = [word for word in words if len(word) > 1 and word != '\r\n']
+    return filtered_words
+
+data['tokenized_content'] = data['content'].apply(jieba_tokenizer)
+
+print(data['tokenized_content'].head())
+
+all_words = [word for tokens in data['tokenized_content'] for word in tokens]
+
+unique_words = set(all_words)
+
+word_to_num = {word: i for i, word in enumerate(unique_words)}
+num_to_word = {i: word for word, i in word_to_num.items()}
+
+data['numerical_sequences'] = data['tokenized_content'].apply(lambda tokens: [word_to_num[word] for word in tokens])
+
+len(unique_words), data['numerical_sequences'].head()
+
+
+vocab_size = len(word_to_num)  
+hidden_size = 100  
+learning_rate = 1e-1
+
+
+Wxh = np.random.randn(hidden_size, vocab_size)*0.01  
+Whh = np.random.randn(hidden_size, hidden_size)*0.01  
+Why = np.random.randn(vocab_size, hidden_size)*0.01 
+bh = np.zeros((hidden_size, 1))  
+by = np.zeros((vocab_size, 1))  
+
+import numpy as np
+sequence_length = 20  
+features = []
+labels = []
+
+for poem in data['numerical_sequences']:
+    for i in range(len(poem) - sequence_length):
+        seq = poem[i:i + sequence_length]
+        label = poem[i + sequence_length]
+        features.append(seq)
+        labels.append(label)
+
+features = np.array(features)
+labels = np.array(labels)
+
+train_size = int(len(features) * 0.8)
+train_features = features[:train_size]
+train_labels = labels[:train_size]
+test_features = features[train_size:]
+test_labels = labels[train_size:]
+
+
+class LSTMModel(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim):
+        super(LSTMModel, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, vocab_size)
+
+    def forward(self, x):
+        x = self.embedding(x)
+        lstm_out, _ = self.lstm(x)
+        out = self.fc(lstm_out[:, -1, :])
+        return out
+
+
+vocab_size = len(word_to_num)  
+embedding_dim = 100            
+hidden_dim = 128               
+model = LSTMModel(vocab_size, embedding_dim, hidden_dim)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+num_epochs = 100
+
+train_features_tensor = torch.tensor(train_features, dtype=torch.long)
+train_labels_tensor = torch.tensor(train_labels, dtype=torch.long)
+
+test_features_tensor = torch.tensor(test_features, dtype=torch.long)
+test_labels_tensor = torch.tensor(test_labels, dtype=torch.long)
+
+train_dataset = TensorDataset(train_features_tensor, train_labels_tensor)
+test_dataset = TensorDataset(test_features_tensor, test_labels_tensor)
+
+train_loader = DataLoader(dataset=train_dataset, batch_size=32, shuffle=True)
+test_loader = DataLoader(dataset=test_dataset, batch_size=32, shuffle=True)
+
+losses = []  
+
+for epoch in range(num_epochs):
+    total_loss = 0
+    for batch in train_loader:
+        inputs, targets = batch
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    
+    average_loss = total_loss / len(train_loader)
+    losses.append(average_loss)
+    
+    if(epoch % 10 == 0):
+        print(f'Epoch {epoch}, Loss: {average_loss}')
+
+
+def generate_quatrain(model, start_sequence, sequence_length, num_lines=4, words_per_line=4):
+    model.eval()  
+    words = start_sequence.split()
+    poem = []
+
+    for _ in range(num_lines):
+        line = []
+        for _ in range(words_per_line):
+            input_sequence = [word_to_num.get(word, random.choice(list(word_to_num.values()))) for word in words[-sequence_length:]]
+            input_sequence = input_sequence[-sequence_length:]  
+            input_tensor = torch.LongTensor(input_sequence).unsqueeze(0)
+            with torch.no_grad():
+                output = model(input_tensor)
+            next_word = num_to_word[output.argmax(1).item()]
+            line.append(next_word)
+            words.append(next_word)
+        poem.append(''.join(line))
+
+    return '\n'.join(poem)
+
+start_sequence = "江雪"
+generated_poem = generate_quatrain(model, start_sequence, sequence_length)
+print(generated_poem)
+
+def generate_line(model, start_word, sequence_length, word_to_num, num_to_word, length=5):
+    model.eval() 
+    text = start_word
+    for _ in range(length - 1):  
+        input_sequence = [word_to_num.get(word, random.choice(list(word_to_num.values()))) for word in text][-sequence_length:]
+        input_tensor = torch.tensor(input_sequence, dtype=torch.long).unsqueeze(0)
+        with torch.no_grad():
+            output = model(input_tensor)
+        next_word = num_to_word[output.argmax(1).item()]
+        text += next_word
+    return text
+
+def generate_acrostic(model, sequence_length, start_words, word_to_num, num_to_word):
+    poem = []
+    for word in start_words:
+        word = find_starting_word(word, word_to_num)
+        line = generate_line(model, word, sequence_length, word_to_num, num_to_word)
+        poem.append(line)
+    return '\n'.join(poem)
+
+def find_starting_word(char, word_to_num):
+    starting_words = [word for word in word_to_num if word.startswith(char)]
+    if starting_words:
+        return random.choice(starting_words) 
+    else:
+        return char
+
+print(generate_acrostic(model, sequence_length, '新年快乐', word_to_num, num_to_word))
+
+# 保存模型
+torch.save(model.state_dict(), 'peo2/lstm_model.pth')
+
+import pickle
+with open('peo2/word_to_num.pkl', 'wb') as f:
+    pickle.dump(word_to_num, f)
+with open('peo2/num_to_word.pkl', 'wb') as f:
+    pickle.dump(num_to_word, f)
