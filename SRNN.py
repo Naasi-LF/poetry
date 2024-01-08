@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 with open('baijing.txt', 'r') as file:
     # 读取文件内容到变量 data 中
     data = file.read()
-#（莎士比亚的《哈姆雷特》独白）
+# （莎士比亚的《哈姆雷特》独白）
 data = """
 To be, or not to be, that is the question:
 Whether 'tis nobler in the mind to suffer
@@ -13,9 +13,9 @@ The slings and arrows of outrageous fortune,
 Or to take arms against a sea of troubles
 And by opposing end them.
 """
-data = """
-It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all going direct to Heaven, we were all going direct the other way – in short, the period was so far like the present period, that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative degree of comparison only.
-"""
+# data = """
+# It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all going direct to Heaven, we were all going direct the other way – in short, the period was so far like the present period, that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative degree of comparison only.
+# """
 # 分词
 # 使用正则表达式来处理标点符号和单词
 words = re.findall(r'\b\w+\b', data.lower())
@@ -40,9 +40,9 @@ y = np.array(y)
 
 # RNN参数
 input_size = vocab_size
-hidden_size = 50
+hidden_size = 100
 output_size = vocab_size
-learning_rate = 0.0001
+learning_rate = 0.01
 
 # 参数初始化
 Wxh = np.random.randn(hidden_size, input_size) * 0.01
@@ -120,5 +120,41 @@ def train(data, iter_num):
 
 #         print(f"Epoch {i + 1}, Loss: {loss}")
 
-train(data, iter_num=100000)  # 使用相同的train函数和参数
+train(data, iter_num=1500)  # 使用相同的train函数和参数
+
+import random
+
+def generate_poem_with_punctuation(start_word, word_to_index, index_to_word, hidden_size, min_length=5, max_length=8):
+    word = start_word
+    h = np.zeros((hidden_size, 1))
+    poem = [word]
+
+    # 随机确定诗歌长度
+    length = random.randint(min_length, max_length)
+
+    for _ in range(length - 1):  # 减1因为已经包含起始词
+        x = np.zeros((input_size, 1))
+        x[word_to_index[word]] = 1
+        h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
+        y = np.dot(Why, h) + by
+        p = np.exp(y) / np.sum(np.exp(y))
+        idx = np.random.choice(range(vocab_size), p=p.ravel())
+        word = index_to_word[idx]
+        poem.append(word)
+
+
+    poem[-1] += '.'  # 在最后一个词后添加句号
+
+    return ' '.join(poem)
+
+# 使用训练好的模型和参数生成诗歌
+generated_poem = generate_poem_with_punctuation(start_word='the', word_to_index=word_to_index, index_to_word=index_to_word, hidden_size=hidden_size)
+print(generated_poem)
+
+
+# 使用训练好的模型和参数生成谚语
+# generated_proverb = generate_proverb(start_word='the', word_to_index=word_to_index, index_to_word=index_to_word, hidden_size=hidden_size)
+# print(generated_proverb)
+
+
 

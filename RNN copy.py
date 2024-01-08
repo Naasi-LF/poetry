@@ -3,25 +3,28 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 import random
+import jieba
 poems = []
-# with open('data.csv', 'r', encoding='utf-8') as file:
-#     csv_reader = csv.DictReader(file)
-#     for row in csv_reader:
-#         poem_content = row['content']
-#         poems.append(poem_content)
 
 with open('data.csv', 'r', encoding='utf-8') as file:
     csv_reader = csv.DictReader(file)
     for row in csv_reader:
-        # if random.random() < 0.03:  # Randomly decide whether to include this row
+        # if random.random() < 0.03:
             poem_content = row['content']
             poems.append(poem_content)
 
-poems = [re.sub(r'[^\w\s]', '', poem) for poem in poems]
-poems = [re.sub(r'[\s\n]', '', poem) for poem in poems]
+# 使用jieba分词
+# 使用jieba分词，并跳过标点符号和换行符
+poems = [list(filter(lambda x: x not in ['\n', '，', '。', '！', '？','、'], jieba.cut(poem))) for poem in poems]
 
+
+# 将列表的列表展平，得到词列表
+words = [word for poem in poems for word in poem]
+
+# 去重以构建词汇表
+vocab = set(words)
 # 去重
-vocab = set("".join(poems))
+# vocab = set("".join(poems))
 
 # 长度就是模型接受的大小
 vocab_size = len(vocab)
@@ -31,9 +34,9 @@ index_to_char = {i: char for i, char in enumerate(vocab)}
 
 # 模型参数初始化
 input_size = vocab_size
-hidden_size = 5 # 可以调整这个值以优化模型
+hidden_size = 50 # 可以调整这个值以优化模型
 output_size = vocab_size
-rate = 0.01
+rate = 0.1
 
 Wxh = np.random.randn(hidden_size, input_size) * 0.01
 Whh = np.random.randn(hidden_size, hidden_size) * 0.01
@@ -77,7 +80,7 @@ def forward_backward(inputs, targets, hprev):
 # 每五个为一个序列
 length = 5 
 # 训练参数
-num = 500000  # 迭代次数
+num = 10000  # 迭代次数
 patience = 800   # 耐心值
 
 def train(data, num, patience=500):
@@ -143,18 +146,18 @@ def train(data, num, patience=500):
     plt.show()
     return best, lowest_loss
 
-data = ''.join(poems)
-best_params, lowest_loss = train(data, num, patience)
+
+best_params, lowest_loss = train(words, num, patience)
 
 print(f"lowest loss: {lowest_loss}")
+def generate_line(start_word, length=5):
 
-def generate_line(start_char, length=5):
-
-    if start_char not in char_to_index:
-        random_char = np.random.choice(list(vocab))
-        start_index = char_to_index[random_char]
+    if start_word not in char_to_index:
+        # 如果起始词不在词汇表中，随机选择一个词
+        random_word = np.random.choice(list(vocab))
+        start_index = char_to_index[random_word]
     else:
-        start_index = char_to_index[start_char]
+        start_index = char_to_index[start_word]
 
     x = np.zeros((input_size, 1))
     x[start_index] = 1
@@ -165,18 +168,19 @@ def generate_line(start_char, length=5):
         h = np.tanh(np.dot(Wxh, x) + np.dot(Whh, h) + bh)
         y_hat = np.dot(Why, h) + by
         prob = np.exp(y_hat) / np.sum(np.exp(y_hat))
-        next_char = np.random.choice(range(vocab_size), p=prob.ravel())
-        indices.append(next_char)
+        next_index = np.random.choice(range(vocab_size), p=prob.ravel())
+        indices.append(next_index)
         x = np.zeros((input_size, 1))
-        x[next_char] = 1
+        x[next_index] = 1
 
     generated_poem = "".join(index_to_char[i] for i in indices)
-    return start_char + generated_poem[1:]
+    return generated_poem
 
+# 输入藏头词列表
+acrostic_input = input("请输入藏头诗的头: ").split(' ')
 
-chars = input("请输入藏头诗的头: ").split(' ')
-
-for char in chars:
-    generated_line = generate_line(char, length=5)
+for word in acrostic_input:
+    generated_line = generate_line(word, length=5)
     print(generated_line)
+
 

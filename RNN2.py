@@ -1,31 +1,34 @@
-import re
+import jieba
 import numpy as np
 import csv
-import matplotlib.pyplot as plt
 import random
-poems = []
-# with open('data.csv', 'r', encoding='utf-8') as file:
-#     csv_reader = csv.DictReader(file)
-#     for row in csv_reader:
-#         poem_content = row['content']
-#         poems.append(poem_content)
+import re
+import matplotlib.pyplot as plt
+# 清洗文本，移除空格和特殊符号
+def clean_text(text):
+    text = re.sub(r'\s+', '', text)  # Remove all spaces and non-word characters
+    return text
 
+# 使用jieba进行分词
+def tokenize_poem(poem):
+    return list(jieba.cut(poem))
+
+# 读取和处理诗歌数据
+poems = []
 with open('data.csv', 'r', encoding='utf-8') as file:
     csv_reader = csv.DictReader(file)
     for row in csv_reader:
-        # if random.random() < 0.03:  # Randomly decide whether to include this row
-            poem_content = row['content']
-            poems.append(poem_content)
+        # if random.random() < 0.03:
+            poem_content = clean_text(row['content'])
+            poems.append(tokenize_poem(poem_content))
 
-poems = [re.sub(r'[^\w\s]', '', poem) for poem in poems]
-poems = [re.sub(r'[\s\n]', '', poem) for poem in poems]
+# 构建词汇表
+vocab = set()
+for poem in poems:
+    for word in poem:
+        vocab.add(word)
 
-# 去重
-vocab = set("".join(poems))
-
-# 长度就是模型接受的大小
 vocab_size = len(vocab)
-# 加密解密
 char_to_index = {char: i for i, char in enumerate(vocab)}
 index_to_char = {i: char for i, char in enumerate(vocab)}
 
@@ -82,7 +85,7 @@ patience = 800   # 耐心值
 
 def train(data, num, patience=500):
     global Wxh, Whh, Why, bh, by  # 全局
-
+    words = data.split()  # 将字符串分割成词的列表
     lowest_loss = np.inf # 迭代找最小
     best = {}
     counter = 0
@@ -96,9 +99,9 @@ def train(data, num, patience=500):
             hprev = np.zeros((hidden_size, 1))
             p = 0  
 
-        inputs = [char_to_index[data[p]]]
-        targets = [char_to_index[ch] for ch in data[p+1:p+length+1]]
-
+        inputs = [char_to_index[words[p+j]] for j in range(length)]
+        # targets = [char_to_index[words[p+j+1]] for j in range(length)]
+        targets = [char_to_index[words[p+j+1]] if p+j+1 < len(words) else char_to_index[words[0]] for j in range(length)]
         loss, dWxh, dWhh, dWhy, dbh, dby, hprev = forward_backward(inputs, targets, hprev)
 
         # 梯度下降
@@ -143,7 +146,14 @@ def train(data, num, patience=500):
     plt.show()
     return best, lowest_loss
 
-data = ''.join(poems)
+# 将分词后的诗句转换为字符串
+poems = [' '.join(poem) for poem in poems]
+poems = [re.sub(r'[^\w\s]', '', poem) for poem in poems]
+# poems = [re.sub(r'[\s\n]', '', poem) for poem in poems]
+# 现在 `poems` 是一个字符串列表，可以安全地合并为一个长字符串
+data = ' '.join(poems)
+
+
 best_params, lowest_loss = train(data, num, patience)
 
 print(f"lowest loss: {lowest_loss}")
@@ -179,4 +189,3 @@ chars = input("请输入藏头诗的头: ").split(' ')
 for char in chars:
     generated_line = generate_line(char, length=5)
     print(generated_line)
-
