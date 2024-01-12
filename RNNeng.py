@@ -1,10 +1,10 @@
 import numpy as np
 import re
 import matplotlib.pyplot as plt
-# 使用 with 语句打开文件，这样可以确保文件在读取后正确关闭
-with open('baijing.txt', 'r') as file:
-    # 读取文件内容到变量 data 中
-    data = file.read()
+# 使用 with 语句打开文件
+# with open('baijing.txt', 'r') as file:
+#     # 读取文件内容到变量 data 中
+#     data = file.read()
 # （莎士比亚的《哈姆雷特》独白）
 data = """
 To be, or not to be, that is the question:
@@ -106,19 +106,7 @@ def train(data, iter_num):
     plt.ylabel('Loss')
     plt.title('Loss during training')
     plt.show()
-# # 训练模型的简化版
-# def train(data, iter_num):
-#     hprev = np.zeros((hidden_size, 1))
-#     for i in range(iter_num):
-#         inputs = X
-#         targets = y
 
-#         loss, dWxh, dWhh, dWhy, dbh, dby, hprev = forward_backward(inputs, targets, hprev)
-
-#         for param, dparam in zip([Wxh, Whh, Why, bh, by], [dWxh, dWhh, dWhy, dbh, dby]):
-#             param += -learning_rate * dparam
-
-#         print(f"Epoch {i + 1}, Loss: {loss}")
 
 train(data, iter_num=1500)  # 使用相同的train函数和参数
 
@@ -143,18 +131,9 @@ def generate_poem_with_punctuation(start_word, word_to_index, index_to_word, hid
         poem.append(word)
 
 
-    poem[-1] += '.'  # 在最后一个词后添加句号
+    poem[-1] += '.'  
 
     return ' '.join(poem)
 
-# 使用训练好的模型和参数生成诗歌
 generated_poem = generate_poem_with_punctuation(start_word='the', word_to_index=word_to_index, index_to_word=index_to_word, hidden_size=hidden_size)
 print(generated_poem)
-
-
-# 使用训练好的模型和参数生成谚语
-# generated_proverb = generate_proverb(start_word='the', word_to_index=word_to_index, index_to_word=index_to_word, hidden_size=hidden_size)
-# print(generated_proverb)
-
-
-

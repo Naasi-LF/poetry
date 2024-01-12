@@ -4,11 +4,7 @@ import csv
 import matplotlib.pyplot as plt
 import random
 poems = []
-# with open('data.csv', 'r', encoding='utf-8') as file:
-#     csv_reader = csv.DictReader(file)
-#     for row in csv_reader:
-#         poem_content = row['content']
-#         poems.append(poem_content)
+
 
 with open('data.csv', 'r', encoding='utf-8') as file:
     csv_reader = csv.DictReader(file)
